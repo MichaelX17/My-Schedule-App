@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+
+# Build & packaging outputs
+dist/
+dist-ssr/
+release/
+src-tauri/target/
+src-tauri/gen/schemas/
+*.AppImage
+*.exe
+*.msi
+*.deb
+*.rpm
+*.zip
+
+# Test, coverage & tool caches
+coverage/
+.vite/
+.eslintcache
+*.tsbuildinfo
+
+# AI / local planning & agent tooling (not application source)
+.agents/
+skills-lock.json
+AGENTS.md
+MEMORY.md
+
+# Environment variables & release signing keys
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.pfx
+*.p12
+*.sig
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Local runtime & SQLite data
+data/
+updates/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
