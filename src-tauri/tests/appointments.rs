@@ -11,7 +11,9 @@ use my_schedule_app_lib::models::appointment::{
 use my_schedule_app_lib::models::business::CreateBusinessProfileInput;
 use my_schedule_app_lib::models::client::{CreateClientInput, ListClientsParams};
 use my_schedule_app_lib::models::service::{CreateServiceInput, UpdateServiceInput};
-use my_schedule_app_lib::models::session_plan::CreateSessionPlanInput;
+use my_schedule_app_lib::models::session_plan::{
+    CreateSessionPlanInput, CreateSessionPlanWithAppointmentsInput, PlanSessionSlotInput,
+};
 use my_schedule_app_lib::platform;
 use my_schedule_app_lib::services::{
     appointment_service, business_service, client_service, service_catalog_service,
@@ -486,6 +488,284 @@ async fn session_plan_consistency_status_transitions_reschedule_and_overlaps() {
     .await
     .expect("list plan appts");
     assert_eq!(plan_appts.len(), 1);
+
+    conn.close().await;
+}
+
+#[tokio::test]
+async fn create_session_plan_with_multiple_appointments_is_atomic() {
+    let temp = TestDir::new("plan_multi_appts");
+    let (conn, s1_id, s2_id) = setup_business_and_services(&temp, "Europe/Madrid").await;
+    let pool = &conn.require_pool().expect("pool");
+
+    let client = client_service::create_client(
+        pool,
+        CreateClientInput {
+            full_name: "Lucia Caminos".into(),
+            phone: None,
+            email: None,
+            address: None,
+            notes: None,
+        },
+    )
+    .await
+    .expect("create Lucia Caminos");
+
+    // 1. Mismatched session count must fail without creating an orphan plan
+    let mismatch_err = session_plan_service::create_session_plan_with_appointments(
+        pool,
+        CreateSessionPlanWithAppointmentsInput {
+            client_id: client.id.clone(),
+            title: "8-Session Plan".into(),
+            description: None,
+            planned_sessions: 8,
+            service_ids: vec![s1_id.clone()],
+            sessions: vec![PlanSessionSlotInput {
+                start_local: "2026-12-01T10:00".into(),
+                end_local: "2026-12-01T11:00".into(),
+                dst_disambiguation: None,
+                notes: None,
+            }],
+        },
+    )
+    .await
+    .expect_err("mismatched session slot count must fail");
+    assert!(matches!(mismatch_err, AppError::Validation(_)));
+    assert!(
+        session_plan_service::list_session_plans(pool, Default::default())
+            .await
+            .expect("list plans")
+            .is_empty()
+    );
+
+    // 2. Valid 8-session plan creates the plan and all 8 individual linked appointments
+    let sessions: Vec<PlanSessionSlotInput> = (1..=8)
+        .map(|day| PlanSessionSlotInput {
+            start_local: format!("2026-12-{day:02}T10:00"),
+            end_local: format!("2026-12-{day:02}T11:30"),
+            dst_disambiguation: None,
+            notes: None,
+        })
+        .collect();
+
+    let result = session_plan_service::create_session_plan_with_appointments(
+        pool,
+        CreateSessionPlanWithAppointmentsInput {
+            client_id: client.id.clone(),
+            title: "Lucia 8-Session Series".into(),
+            description: Some("Full 8-session coaching plan".into()),
+            planned_sessions: 8,
+            service_ids: vec![s1_id, s2_id],
+            sessions,
+        },
+    )
+    .await
+    .expect("create 8-session plan with appointments");
+
+    assert_eq!(result.plan.planned_sessions, 8);
+    assert_eq!(result.plan.linked_total, 8);
+    assert_eq!(result.plan.linked_scheduled, 8);
+    assert_eq!(result.appointments.len(), 8);
+    for (idx, appt) in result.appointments.iter().enumerate() {
+        assert_eq!(appt.client_id, client.id);
+        assert_eq!(
+            appt.session_plan_id.as_deref(),
+            Some(result.plan.id.as_str())
+        );
+        assert_eq!(appt.services.len(), 2);
+        assert!(appt
+            .notes
+            .as_deref()
+            .unwrap_or("")
+            .contains(&format!("Session {} of 8", idx + 1)));
+    }
+
+    conn.close().await;
+}
+
+#[tokio::test]
+async fn delete_appointment_updates_session_plan_and_delete_session_plan_works() {
+    let temp = TestDir::new("delete_appts_and_plans");
+    let (conn, s1_id, _) = setup_business_and_services(&temp, "Europe/Madrid").await;
+    let pool = &conn.require_pool().expect("pool");
+
+    let client = client_service::create_client(
+        pool,
+        CreateClientInput {
+            full_name: "Lucia Caminos".into(),
+            phone: None,
+            email: None,
+            address: None,
+            notes: None,
+        },
+    )
+    .await
+    .expect("create client");
+
+    // 1. Create a 3-session plan with 3 appointments
+    let plan_result = session_plan_service::create_session_plan_with_appointments(
+        pool,
+        CreateSessionPlanWithAppointmentsInput {
+            client_id: client.id.clone(),
+            title: "3-Session Massage Pack".into(),
+            description: None,
+            planned_sessions: 3,
+            service_ids: vec![s1_id.clone()],
+            sessions: vec![
+                PlanSessionSlotInput {
+                    start_local: "2026-12-01T10:00".into(),
+                    end_local: "2026-12-01T11:00".into(),
+                    dst_disambiguation: None,
+                    notes: None,
+                },
+                PlanSessionSlotInput {
+                    start_local: "2026-12-08T10:00".into(),
+                    end_local: "2026-12-08T11:00".into(),
+                    dst_disambiguation: None,
+                    notes: None,
+                },
+                PlanSessionSlotInput {
+                    start_local: "2026-12-15T10:00".into(),
+                    end_local: "2026-12-15T11:00".into(),
+                    dst_disambiguation: None,
+                    notes: None,
+                },
+            ],
+        },
+    )
+    .await
+    .expect("create 3-session plan");
+
+    let plan_id = plan_result.plan.id.clone();
+    let appt_0_id = plan_result.appointments[0].id.clone();
+    let appt_1_id = plan_result.appointments[1].id.clone();
+    let appt_2_id = plan_result.appointments[2].id.clone();
+
+    // 2. Delete the first appointment from the session plan -> appointment gone, plan updated to 2 planned / 2 linked
+    appointment_service::delete_appointment(pool, &appt_0_id)
+        .await
+        .expect("delete linked appointment");
+
+    let missing_err = appointment_service::get_appointment(pool, &appt_0_id)
+        .await
+        .expect_err("deleted appointment must not exist");
+    assert!(matches!(missing_err, AppError::NotFound(_)));
+
+    let updated_plan = session_plan_service::get_session_plan(pool, &plan_id)
+        .await
+        .expect("reload session plan");
+    assert_eq!(updated_plan.planned_sessions, 2);
+    assert_eq!(updated_plan.linked_total, 2);
+    assert_eq!(updated_plan.linked_scheduled, 2);
+
+    // 3. Delete the session plan while KEEPING linked appointments as independent
+    session_plan_service::delete_session_plan(pool, &plan_id, false)
+        .await
+        .expect("delete session plan keeping appointments");
+
+    let missing_plan = session_plan_service::get_session_plan(pool, &plan_id)
+        .await
+        .expect_err("deleted session plan must not exist");
+    assert!(matches!(missing_plan, AppError::NotFound(_)));
+
+    let remaining_1 = appointment_service::get_appointment(pool, &appt_1_id)
+        .await
+        .expect("unlinked appt 1 remains");
+    assert!(remaining_1.session_plan_id.is_none());
+    assert!(remaining_1.session_plan_title.is_none());
+
+    // Delete standalone appointment (even after marking completed)
+    appointment_service::complete_appointment(pool, &appt_1_id)
+        .await
+        .expect("complete appt 1");
+    appointment_service::delete_appointment(pool, &appt_1_id)
+        .await
+        .expect("delete completed appointment");
+    appointment_service::delete_appointment(pool, &appt_2_id)
+        .await
+        .expect("delete scheduled appointment");
+
+    // 4. Create a 1-session plan, delete its only appointment (planned_sessions stays >= 1), then delete plan
+    let single_plan = session_plan_service::create_session_plan_with_appointments(
+        pool,
+        CreateSessionPlanWithAppointmentsInput {
+            client_id: client.id.clone(),
+            title: "Single Session Plan".into(),
+            description: None,
+            planned_sessions: 1,
+            service_ids: vec![s1_id.clone()],
+            sessions: vec![PlanSessionSlotInput {
+                start_local: "2026-12-20T10:00".into(),
+                end_local: "2026-12-20T11:00".into(),
+                dst_disambiguation: None,
+                notes: None,
+            }],
+        },
+    )
+    .await
+    .expect("create 1-session plan");
+
+    appointment_service::delete_appointment(pool, &single_plan.appointments[0].id)
+        .await
+        .expect("delete only appointment in 1-session plan");
+
+    let reloaded_single = session_plan_service::get_session_plan(pool, &single_plan.plan.id)
+        .await
+        .expect("reload single plan");
+    assert_eq!(reloaded_single.planned_sessions, 1);
+    assert_eq!(reloaded_single.linked_total, 0);
+
+    session_plan_service::delete_session_plan(pool, &single_plan.plan.id, false)
+        .await
+        .expect("delete empty single plan");
+
+    // 5. Create a 2-session plan and delete BOTH plan and linked appointments
+    let cascade_plan = session_plan_service::create_session_plan_with_appointments(
+        pool,
+        CreateSessionPlanWithAppointmentsInput {
+            client_id: client.id,
+            title: "Cascade Plan".into(),
+            description: None,
+            planned_sessions: 2,
+            service_ids: vec![s1_id],
+            sessions: vec![
+                PlanSessionSlotInput {
+                    start_local: "2026-12-22T10:00".into(),
+                    end_local: "2026-12-22T11:00".into(),
+                    dst_disambiguation: None,
+                    notes: None,
+                },
+                PlanSessionSlotInput {
+                    start_local: "2026-12-29T10:00".into(),
+                    end_local: "2026-12-29T11:00".into(),
+                    dst_disambiguation: None,
+                    notes: None,
+                },
+            ],
+        },
+    )
+    .await
+    .expect("create 2-session cascade plan");
+
+    session_plan_service::delete_session_plan(pool, &cascade_plan.plan.id, true)
+        .await
+        .expect("delete plan with linked appointments");
+
+    let remaining_appts =
+        appointment_service::list_appointments(pool, ListAppointmentsParams::default())
+            .await
+            .expect("list remaining appointments");
+    assert!(remaining_appts.is_empty());
+
+    // 6. Deleting non-existent IDs returns NotFound
+    assert!(matches!(
+        appointment_service::delete_appointment(pool, "missing-id").await,
+        Err(AppError::NotFound(_))
+    ));
+    assert!(matches!(
+        session_plan_service::delete_session_plan(pool, "missing-id", false).await,
+        Err(AppError::NotFound(_))
+    ));
 
     conn.close().await;
 }

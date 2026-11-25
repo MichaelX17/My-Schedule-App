@@ -43,6 +43,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       const resolvedDark =
         mode === "dark" || (mode === "system" && Boolean(mediaQuery?.matches));
       root.classList.toggle("dark", resolvedDark);
+      root.style.colorScheme = resolvedDark ? "dark" : "light";
     };
 
     applyTheme();

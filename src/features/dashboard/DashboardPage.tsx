@@ -12,6 +12,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { AppointmentFormDialog } from "@/features/appointments/components/AppointmentFormDialog";
 import {
@@ -105,17 +106,19 @@ export function DashboardPage() {
 
   if (isError) {
     return (
-      <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
-        <div
-          role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-destructive/40 bg-card p-4 text-sm text-destructive"
-        >
-          <AlertCircle className="size-4 mt-0.5 shrink-0" />
-          <div>
-            <p className="font-medium">Unable to load dashboard</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {extractErrorMessage(error)}
-            </p>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 rounded-xl border border-destructive/40 bg-card p-4 text-sm text-destructive"
+          >
+            <AlertCircle className="size-4 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">Unable to load dashboard</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {extractErrorMessage(error)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -124,9 +127,11 @@ export function DashboardPage() {
 
   if (isLoading || !data) {
     return (
-      <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
-        <div className="rounded-xl border border-border bg-card py-16 text-center text-sm text-muted-foreground">
-          Loading dashboard summary...
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
+          <div className="rounded-xl border border-border bg-card py-16 text-center text-sm text-muted-foreground">
+            Loading dashboard summary...
+          </div>
         </div>
       </div>
     );
@@ -138,49 +143,53 @@ export function DashboardPage() {
       : `${data.period_start_local} to ${data.period_end_local}`;
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-6 sm:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {data.business_name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Operational overview for {data.today_local} ({data.timezone}).
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div
-            role="group"
-            aria-label="Dashboard reporting period"
-            className="inline-flex rounded-md border border-border bg-background p-0.5"
-          >
-            {PERIOD_OPTIONS.map((opt) => {
-              const active = period === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setPeriod(opt.value)}
-                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                    active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+    <PageLayout
+      maxWidth="6xl"
+      header={
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {data.business_name}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Operational overview for {data.today_local} ({data.timezone}).
+            </p>
           </div>
 
-          <Button onClick={() => setCreateApptOpen(true)}>
-            <Plus className="size-4" />
-            New Appointment
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              role="group"
+              aria-label="Dashboard reporting period"
+              className="inline-flex rounded-md border border-border bg-background p-0.5"
+            >
+              {PERIOD_OPTIONS.map((opt) => {
+                const active = period === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setPeriod(opt.value)}
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Button onClick={() => setCreateApptOpen(true)}>
+              <Plus className="size-4" />
+              New Appointment
+            </Button>
+          </div>
         </div>
-      </div>
+      }
+    >
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -354,6 +363,6 @@ export function DashboardPage() {
           }}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }

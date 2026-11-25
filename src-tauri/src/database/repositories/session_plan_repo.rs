@@ -1,4 +1,4 @@
-use sqlx::{QueryBuilder, Sqlite, SqlitePool};
+use sqlx::{QueryBuilder, Sqlite, SqlitePool, Transaction};
 
 use crate::errors::{AppError, AppResult};
 use crate::models::session_plan::{ListSessionPlansParams, SessionPlan, SessionPlanSummary};
@@ -76,6 +76,28 @@ pub async fn get_summary_by_id(
     Ok(summary)
 }
 
+pub async fn insert_tx(tx: &mut Transaction<'_, Sqlite>, plan: &SessionPlan) -> AppResult<()> {
+    sqlx::query(
+        r#"
+        INSERT INTO session_plans (
+            id, client_id, title, description, planned_sessions, status, created_at, updated_at
+        )
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        "#,
+    )
+    .bind(&plan.id)
+    .bind(&plan.client_id)
+    .bind(&plan.title)
+    .bind(&plan.description)
+    .bind(plan.planned_sessions)
+    .bind(&plan.status)
+    .bind(&plan.created_at)
+    .bind(&plan.updated_at)
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
 pub async fn insert(pool: &SqlitePool, plan: &SessionPlan) -> AppResult<SessionPlanSummary> {
     sqlx::query(
         r#"
@@ -129,4 +151,39 @@ pub async fn update(pool: &SqlitePool, plan: &SessionPlan) -> AppResult<SessionP
     get_summary_by_id(pool, &plan.id)
         .await?
         .ok_or_else(|| AppError::Internal("Updated session plan could not be reloaded.".into()))
+}
+
+pub async fn decrement_planned_sessions_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    id: &str,
+    updated_at: &str,
+) -> AppResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE session_plans
+        SET planned_sessions = CASE
+                WHEN planned_sessions > 1 THEN planned_sessions - 1
+                ELSE 1
+            END,
+            updated_at = ?1
+        WHERE id = ?2
+        "#,
+    )
+    .bind(updated_at)
+    .bind(id)
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+pub async fn delete_tx(tx: &mut Transaction<'_, Sqlite>, id: &str) -> AppResult<()> {
+    let result = sqlx::query("DELETE FROM session_plans WHERE id = ?1")
+        .bind(id)
+        .execute(&mut **tx)
+        .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("Session plan not found.".into()));
+    }
+    Ok(())
 }

@@ -2,7 +2,9 @@ use tauri::State;
 
 use crate::errors::AppResult;
 use crate::models::session_plan::{
-    CreateSessionPlanInput, ListSessionPlansParams, SessionPlanSummary, UpdateSessionPlanInput,
+    CreateSessionPlanInput, CreateSessionPlanWithAppointmentsInput,
+    CreateSessionPlanWithAppointmentsResult, ListSessionPlansParams, SessionPlanSummary,
+    UpdateSessionPlanInput,
 };
 use crate::services::session_plan_service;
 use crate::AppState;
@@ -35,6 +37,15 @@ pub async fn create_session_plan(
 }
 
 #[tauri::command]
+pub async fn create_session_plan_with_appointments(
+    state: State<'_, AppState>,
+    input: CreateSessionPlanWithAppointmentsInput,
+) -> AppResult<CreateSessionPlanWithAppointmentsResult> {
+    let pool = state.db.require_pool()?;
+    session_plan_service::create_session_plan_with_appointments(&pool, input).await
+}
+
+#[tauri::command]
 pub async fn update_session_plan(
     state: State<'_, AppState>,
     input: UpdateSessionPlanInput,
@@ -50,4 +61,19 @@ pub async fn archive_session_plan(
 ) -> AppResult<SessionPlanSummary> {
     let pool = state.db.require_pool()?;
     session_plan_service::archive_session_plan(&pool, &id).await
+}
+
+#[tauri::command]
+pub async fn delete_session_plan(
+    state: State<'_, AppState>,
+    id: String,
+    delete_linked_appointments: Option<bool>,
+) -> AppResult<()> {
+    let pool = state.db.require_pool()?;
+    session_plan_service::delete_session_plan(
+        &pool,
+        &id,
+        delete_linked_appointments.unwrap_or(false),
+    )
+    .await
 }

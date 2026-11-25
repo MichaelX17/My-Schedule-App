@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   archiveClient,
   createClient,
+  deleteClient,
   getClient,
   listClients,
   restoreClient,
@@ -80,6 +81,19 @@ export function useRestoreClient() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => restoreClient(id),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: CLIENT_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: ["reports"] }),
+      ]);
+    },
+  });
+}
+
+export function useDeleteClient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteClient(id),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: CLIENT_QUERY_KEYS.all }),

@@ -4,6 +4,7 @@ import {
   addDays,
   addMonths,
   enumerateDates,
+  formatAppointmentDuration,
   formatAppointmentTimeForDay,
   formatRangeHeading,
   getAppointmentsForDay,
@@ -114,5 +115,24 @@ describe("calendarDate utilities", () => {
     expect(formatAppointmentTimeForDay(crossesMidnight, "2026-06-16")).toBe(
       "00:00–00:30 (cont.)"
     );
+  });
+
+  it("formats appointment durations concisely", () => {
+    const oneHour = makeAppt("d1", "2026-06-15T10:00", "2026-06-15T11:00");
+    expect(formatAppointmentDuration(oneHour)).toBe("1h");
+
+    const fortyFiveMins = {
+      ...oneHour,
+      start_utc: "2026-06-15T10:00:00.000Z",
+      end_utc: "2026-06-15T10:45:00.000Z",
+    };
+    expect(formatAppointmentDuration(fortyFiveMins)).toBe("45m");
+
+    const ninetyMins = {
+      ...oneHour,
+      start_utc: "2026-06-15T10:00:00.000Z",
+      end_utc: "2026-06-15T11:30:00.000Z",
+    };
+    expect(formatAppointmentDuration(ninetyMins)).toBe("1h 30m");
   });
 });

@@ -57,3 +57,10 @@ pub async fn restore_client(state: State<'_, AppState>, id: String) -> AppResult
     let pool = state.db.require_pool()?;
     client_service::restore_client(&pool, &id).await
 }
+
+/// Permanently deletes an archived client with no dependent history.
+#[tauri::command]
+pub async fn delete_client(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    let pool = state.db.require_pool()?;
+    client_service::delete_client(&pool, &id).await
+}

@@ -11,6 +11,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { useOnboardingStatus } from "@/features/onboarding/hooks/useBusinessProfile";
 import { extractErrorMessage } from "@/services/business";
@@ -114,43 +115,47 @@ export function RemindersPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-6 sm:p-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Reminders &amp; Notifications
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Automatic 1-day-before, 1-hour-before, and appointment-day launch
-            reminders in business timezone ({timezone}).
-          </p>
-        </div>
+    <PageLayout
+      maxWidth="5xl"
+      header={
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Reminders &amp; Notifications
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Automatic 1-day-before, 1-hour-before, and appointment-day launch
+              reminders in business timezone ({timezone}).
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCheckNow}
-            disabled={runCheck.isPending}
-          >
-            <RefreshCw
-              className={`size-4 ${runCheck.isPending ? "animate-spin" : ""}`}
-            />
-            Check Now
-          </Button>
-          {unreadCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              variant="secondary"
-              onClick={handleMarkAllRead}
-              disabled={markAllRead.isPending}
+              variant="outline"
+              onClick={handleCheckNow}
+              disabled={runCheck.isPending}
             >
-              <CheckCheck className="size-4" />
-              Mark All Read
+              <RefreshCw
+                className={`size-4 ${runCheck.isPending ? "animate-spin" : ""}`}
+              />
+              Check Now
             </Button>
-          )}
+            {unreadCount > 0 && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleMarkAllRead}
+                disabled={markAllRead.isPending}
+              >
+                <CheckCheck className="size-4" />
+                Mark All Read
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      }
+    >
 
       {/* Closed-app limitation disclosure (required by Step 07) */}
       <div
@@ -401,6 +406,6 @@ export function RemindersPage() {
           </div>
         )}
       </section>
-    </div>
+    </PageLayout>
   );
 }

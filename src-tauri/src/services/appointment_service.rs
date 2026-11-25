@@ -29,7 +29,7 @@ pub(crate) async fn resolve_business_timezone(pool: &SqlitePool) -> AppResult<St
     Ok("UTC".to_string())
 }
 
-fn validate_time_window(
+pub(crate) fn validate_time_window(
     start_local: &str,
     end_local: &str,
     business_tz: &str,
@@ -59,7 +59,7 @@ fn validate_time_window(
     Ok((start_utc, end_utc))
 }
 
-fn normalize_notes(raw: Option<String>) -> AppResult<Option<String>> {
+pub(crate) fn normalize_notes(raw: Option<String>) -> AppResult<Option<String>> {
     let Some(val) = raw else {
         return Ok(None);
     };
@@ -75,7 +75,7 @@ fn normalize_notes(raw: Option<String>) -> AppResult<Option<String>> {
     Ok(Some(trimmed.to_string()))
 }
 
-async fn build_service_snapshots(
+pub(crate) async fn build_service_snapshots(
     pool: &SqlitePool,
     appointment_id: &str,
     service_ids: &[String],
@@ -576,4 +576,31 @@ pub async fn cancel_appointment(pool: &SqlitePool, id: &str) -> AppResult<Appoin
 
     tracing::info!(appointment_id = %existing.id, "Appointment cancelled");
     get_appointment(pool, &existing.id).await
+}
+
+/// Permanently deletes an appointment (and cascades its service snapshots, reminders, and
+/// notifications). If the appointment belonged to a session plan, updates that session plan
+/// inside the same transaction to decrement its planned session count (clamped to >= 1) and
+/// refresh its timestamp.
+pub async fn delete_appointment(pool: &SqlitePool, id: &str) -> AppResult<()> {
+    let existing = appointment_repo::get_row_by_id(pool, id.trim())
+        .await?
+        .ok_or_else(|| AppError::NotFound("Appointment not found.".into()))?;
+
+    let now = time::now_utc_iso();
+    let mut tx = pool.begin().await?;
+
+    appointment_repo::delete_tx(&mut tx, &existing.id).await?;
+    if let Some(ref plan_id) = existing.session_plan_id {
+        session_plan_repo::decrement_planned_sessions_tx(&mut tx, plan_id, &now).await?;
+    }
+
+    tx.commit().await?;
+
+    tracing::info!(
+        appointment_id = %existing.id,
+        updated_session_plan = existing.session_plan_id.is_some(),
+        "Appointment deleted"
+    );
+    Ok(())
 }

@@ -62,7 +62,7 @@ export function AgendaView({
             className="rounded-xl border border-border bg-card overflow-hidden"
           >
             <div
-              className={`flex items-center justify-between border-b border-border px-4 py-2.5 ${
+              className={`flex items-center justify-between px-4 py-2.5 shadow-[0_1px_0_rgb(128_128_128/0.12)] ${
                 isToday ? "bg-primary/5" : "bg-muted/30"
               }`}
             >

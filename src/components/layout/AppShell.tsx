@@ -42,9 +42,9 @@ export function AppShell() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col sm:flex-row">
-      <aside className="w-full sm:w-60 shrink-0 border-b sm:border-b-0 sm:border-r border-border bg-card flex flex-col">
-        <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-border">
+    <div className="h-screen overflow-hidden bg-background text-foreground flex flex-col sm:flex-row">
+      <aside className="w-full sm:w-60 shrink-0 sm:h-full border-b sm:border-b-0 sm:border-r border-border bg-card flex flex-col overflow-hidden">
+        <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-4 border-b border-border">
           <div className="flex items-center gap-2.5 min-w-0">
             {logo ? (
               <img
@@ -81,12 +81,15 @@ export function AppShell() {
           </Button>
         </div>
 
-        <nav aria-label="Main navigation" className="p-2 flex sm:flex-col gap-1">
+        <nav
+          aria-label="Main navigation"
+          className="p-2 flex sm:flex-col gap-1 overflow-x-auto sm:overflow-x-visible sm:overflow-y-auto flex-1"
+        >
           <NavLink
             to="/"
             end
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -100,7 +103,7 @@ export function AppShell() {
           <NavLink
             to="/calendar"
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -114,7 +117,7 @@ export function AppShell() {
           <NavLink
             to="/appointments"
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -128,7 +131,7 @@ export function AppShell() {
           <NavLink
             to="/clients"
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -142,7 +145,7 @@ export function AppShell() {
           <NavLink
             to="/services"
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -156,7 +159,7 @@ export function AppShell() {
           <NavLink
             to="/reminders"
             className={({ isActive }) =>
-              `flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center justify-between gap-2 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -180,7 +183,7 @@ export function AppShell() {
           <NavLink
             to="/reports"
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -194,7 +197,7 @@ export function AppShell() {
           <NavLink
             to="/backups"
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -208,7 +211,7 @@ export function AppShell() {
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -221,7 +224,7 @@ export function AppShell() {
         </nav>
       </aside>
 
-      <main className="flex-1 min-w-0 overflow-y-auto">
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
         <NotificationToastBanner />
         <Outlet />
       </main>

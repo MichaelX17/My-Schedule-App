@@ -21,7 +21,7 @@ export function NotificationToastBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="border-b border-border bg-primary/5 px-4 py-2.5"
+      className="shrink-0 border-b border-border bg-primary/5 px-4 py-2.5"
     >
       <div className="mx-auto max-w-6xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-start sm:items-center gap-2.5 min-w-0">

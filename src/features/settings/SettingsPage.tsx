@@ -21,6 +21,7 @@ import {
   Sun,
   Trash2,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -299,14 +300,18 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage business details, appearance, reminders, automatic backups, and
-          local storage diagnostics.
-        </p>
-      </div>
+    <PageLayout
+      maxWidth="4xl"
+      header={
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage business details, appearance, reminders, automatic backups,
+            and local storage diagnostics.
+          </p>
+        </div>
+      }
+    >
 
       {saveMessage && (
         <div
@@ -917,6 +922,6 @@ export function SettingsPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

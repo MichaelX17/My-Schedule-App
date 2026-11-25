@@ -273,3 +273,54 @@ async fn service_active_inactive_archive_filtering_snapshot_and_restart() {
 
     conn2.close().await;
 }
+
+#[tokio::test]
+async fn delete_service_requires_archived_state_and_removes_record() {
+    let temp = TestDir::new("delete_archived_only");
+    let paths = platform::AppPaths::from_root(temp.path());
+    paths.ensure_directories().expect("create dirs");
+    let (conn, _) = database::initialize(&paths.database_path)
+        .await
+        .expect("init db");
+    let pool = &conn.require_pool().expect("pool");
+
+    let service = service_catalog_service::create_service(
+        pool,
+        CreateServiceInput {
+            name: "Temporary Service".into(),
+            description: None,
+            default_duration_minutes: 30,
+        },
+    )
+    .await
+    .expect("create service");
+
+    // Active or inactive (non-archived) service cannot be deleted
+    let active_err = service_catalog_service::delete_service(pool, &service.id)
+        .await
+        .expect_err("active service must not be deletable");
+    assert!(matches!(active_err, AppError::Validation(_)));
+
+    service_catalog_service::deactivate_service(pool, &service.id)
+        .await
+        .expect("deactivate service");
+    let inactive_err = service_catalog_service::delete_service(pool, &service.id)
+        .await
+        .expect_err("inactive non-archived service must not be deletable");
+    assert!(matches!(inactive_err, AppError::Validation(_)));
+
+    // Archive first -> now permanent deletion succeeds
+    service_catalog_service::archive_service(pool, &service.id)
+        .await
+        .expect("archive service");
+    service_catalog_service::delete_service(pool, &service.id)
+        .await
+        .expect("delete archived service");
+
+    let not_found = service_catalog_service::get_service(pool, &service.id)
+        .await
+        .expect_err("deleted service must not exist");
+    assert!(matches!(not_found, AppError::NotFound(_)));
+
+    conn.close().await;
+}

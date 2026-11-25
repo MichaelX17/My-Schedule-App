@@ -71,3 +71,10 @@ pub async fn restore_service(state: State<'_, AppState>, id: String) -> AppResul
     let pool = state.db.require_pool()?;
     service_catalog_service::restore_service(&pool, &id).await
 }
+
+/// Permanently deletes an archived service with no dependent appointments.
+#[tauri::command]
+pub async fn delete_service(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    let pool = state.db.require_pool()?;
+    service_catalog_service::delete_service(&pool, &id).await
+}

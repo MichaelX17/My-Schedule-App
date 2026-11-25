@@ -294,3 +294,48 @@ async fn client_search_sorting_and_pagination() {
 
     conn.close().await;
 }
+
+#[tokio::test]
+async fn delete_client_requires_archived_state_and_removes_record() {
+    let temp = TestDir::new("delete_archived_only");
+    let paths = platform::AppPaths::from_root(temp.path());
+    paths.ensure_directories().expect("create dirs");
+    let (conn, _) = database::initialize(&paths.database_path)
+        .await
+        .expect("init db");
+    let pool = &conn.require_pool().expect("pool");
+
+    let client = client_service::create_client(
+        pool,
+        CreateClientInput {
+            full_name: "Delete Candidate".into(),
+            phone: None,
+            email: None,
+            address: None,
+            notes: None,
+        },
+    )
+    .await
+    .expect("create client");
+
+    // Active client cannot be deleted
+    let active_err = client_service::delete_client(pool, &client.id)
+        .await
+        .expect_err("active client must not be deletable");
+    assert!(matches!(active_err, AppError::Validation(_)));
+
+    // Archive first -> now permanent deletion succeeds
+    client_service::archive_client(pool, &client.id)
+        .await
+        .expect("archive client");
+    client_service::delete_client(pool, &client.id)
+        .await
+        .expect("delete archived client");
+
+    let not_found = client_service::get_client(pool, &client.id)
+        .await
+        .expect_err("deleted client must not exist");
+    assert!(matches!(not_found, AppError::NotFound(_)));
+
+    conn.close().await;
+}

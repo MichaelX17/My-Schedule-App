@@ -253,3 +253,34 @@ pub async fn set_archived(
         .await?
         .ok_or_else(|| AppError::Internal("Updated client could not be reloaded.".into()))
 }
+
+/// Counts appointments and session plans referencing a client.
+pub async fn count_dependent_records(pool: &SqlitePool, id: &str) -> AppResult<(i64, i64)> {
+    let appointments_count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM appointments WHERE client_id = ?1")
+            .bind(id)
+            .fetch_one(pool)
+            .await?;
+
+    let session_plans_count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM session_plans WHERE client_id = ?1")
+            .bind(id)
+            .fetch_one(pool)
+            .await?;
+
+    Ok((appointments_count, session_plans_count))
+}
+
+/// Permanently deletes a client record by ID.
+pub async fn delete(pool: &SqlitePool, id: &str) -> AppResult<()> {
+    let result = sqlx::query("DELETE FROM clients WHERE id = ?1")
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("Client not found.".into()));
+    }
+
+    Ok(())
+}

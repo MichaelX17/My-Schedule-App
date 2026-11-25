@@ -10,6 +10,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type {
@@ -164,16 +165,20 @@ export function BackupsExportsPage() {
   const busyExport = exportJson.isPending || exportCsv.isPending;
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-6 sm:p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Backups &amp; Exports
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Export business data to versioned JSON or CSV files, and manage
-          SQLite-safe local backups and restores.
-        </p>
-      </div>
+    <PageLayout
+      maxWidth="5xl"
+      header={
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Backups &amp; Exports
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Export business data to versioned JSON or CSV files, and manage
+            SQLite-safe local backups and restores.
+          </p>
+        </div>
+      }
+    >
 
       {statusMessage && (
         <div
@@ -419,6 +424,6 @@ export function BackupsExportsPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

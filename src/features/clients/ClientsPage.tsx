@@ -10,6 +10,7 @@ import {
   Search,
   Users,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { extractErrorMessage } from "@/services/business";
@@ -75,20 +76,24 @@ export function ClientsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-6 sm:p-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage client contact profiles and general notes. Archived clients
-            retain their historical records.
-          </p>
+    <PageLayout
+      maxWidth="5xl"
+      header={
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage client contact profiles and general notes. Archived clients
+              retain their historical records.
+            </p>
+          </div>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4" />
+            New Client
+          </Button>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          New Client
-        </Button>
-      </div>
+      }
+    >
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div
@@ -300,6 +305,6 @@ export function ClientsPage() {
         onClose={() => setCreateOpen(false)}
         onSubmit={handleCreateSubmit}
       />
-    </div>
+    </PageLayout>
   );
 }

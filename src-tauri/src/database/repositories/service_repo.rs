@@ -244,3 +244,28 @@ pub async fn set_archived(
         .await?
         .ok_or_else(|| AppError::Internal("Updated service could not be reloaded.".into()))
 }
+
+/// Counts appointment-service snapshot rows referencing a service.
+pub async fn count_dependent_appointments(pool: &SqlitePool, id: &str) -> AppResult<i64> {
+    let count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM appointment_services WHERE service_id = ?1")
+            .bind(id)
+            .fetch_one(pool)
+            .await?;
+
+    Ok(count)
+}
+
+/// Permanently deletes a service record by ID.
+pub async fn delete(pool: &SqlitePool, id: &str) -> AppResult<()> {
+    let result = sqlx::query("DELETE FROM services WHERE id = ?1")
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("Service not found.".into()));
+    }
+
+    Ok(())
+}

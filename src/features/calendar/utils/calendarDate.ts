@@ -242,3 +242,27 @@ export function formatAppointmentTimeForDay(
   }
   return "All day (cont.)";
 }
+
+/** Formats total appointment duration concisely (e.g. "45m", "1h", "1h 30m"). */
+export function formatAppointmentDuration(appt: AppointmentDetail): string {
+  const startMs = Date.parse(appt.start_utc);
+  const endMs = Date.parse(appt.end_utc);
+  let totalMinutes = 0;
+
+  if (!Number.isNaN(startMs) && !Number.isNaN(endMs) && endMs > startMs) {
+    totalMinutes = Math.round((endMs - startMs) / 60_000);
+  } else {
+    const startMins = extractLocalMinutes(appt.start_local);
+    const endMins = extractLocalMinutes(appt.end_local);
+    if (endMins > startMins) {
+      totalMinutes = endMins - startMins;
+    }
+  }
+
+  if (totalMinutes <= 0) return "";
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+}

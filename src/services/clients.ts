@@ -77,3 +77,7 @@ export async function archiveClient(id: string): Promise<Client> {
 export async function restoreClient(id: string): Promise<Client> {
   return invokeCommand<Client>("restore_client", { id });
 }
+
+export async function deleteClient(id: string): Promise<void> {
+  return invokeCommand<void>("delete_client", { id });
+}

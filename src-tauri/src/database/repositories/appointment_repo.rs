@@ -372,3 +372,41 @@ pub async fn update_status_tx(
     }
     Ok(())
 }
+
+pub async fn delete_tx(tx: &mut Transaction<'_, Sqlite>, id: &str) -> AppResult<()> {
+    let result = sqlx::query("DELETE FROM appointments WHERE id = ?1")
+        .bind(id)
+        .execute(&mut **tx)
+        .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("Appointment not found.".into()));
+    }
+    Ok(())
+}
+
+pub async fn delete_by_session_plan_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    session_plan_id: &str,
+) -> AppResult<u64> {
+    let result = sqlx::query("DELETE FROM appointments WHERE session_plan_id = ?1")
+        .bind(session_plan_id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(result.rows_affected())
+}
+
+pub async fn unlink_session_plan_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    session_plan_id: &str,
+    updated_at: &str,
+) -> AppResult<u64> {
+    let result = sqlx::query(
+        "UPDATE appointments SET session_plan_id = NULL, updated_at = ?1 WHERE session_plan_id = ?2",
+    )
+    .bind(updated_at)
+    .bind(session_plan_id)
+    .execute(&mut **tx)
+    .await?;
+    Ok(result.rows_affected())
+}

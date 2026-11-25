@@ -59,6 +59,16 @@ describe("AppointmentFormDialog", () => {
     await user.type(screen.getByLabelText(/Full Name/i), "Lucia Gomez");
     await user.type(screen.getByLabelText(/Notes/i), "First visit");
 
+    // Set explicit start hour and minute using the cross-platform time selectors
+    await user.selectOptions(
+      screen.getByLabelText(/Start \(Europe\/Madrid\) Hour/i),
+      "14"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Start \(Europe\/Madrid\) Minute/i),
+      "30"
+    );
+
     await user.click(
       screen.getByRole("button", { name: "Schedule Appointment" })
     );
@@ -69,6 +79,9 @@ describe("AppointmentFormDialog", () => {
     expect(payload.inline_client.full_name).toBe("Lucia Gomez");
     expect(payload.service_ids).toEqual(["svc-1", "svc-2"]);
     expect(payload.notes).toBe("First visit");
+    expect(payload.start_local).toMatch(/T14:30$/);
+    // 60 + 30 = 90 minutes auto-calculated from the two selected services
+    expect(payload.end_local).toMatch(/T16:00$/);
     expect(onClose).toHaveBeenCalled();
   });
 

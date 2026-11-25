@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, Info } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { AppointmentFormDialog } from "@/features/appointments/components/AppointmentFormDialog";
 import {
   useCreateAppointment,
@@ -146,21 +147,26 @@ export function CalendarPage() {
     isNarrow && (requestedView === "week" || requestedView === "month");
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8 space-y-5">
-      <CalendarToolbar
-        view={requestedView}
-        anchorDate={activeAnchor}
-        rangeHeading={rangeHeading}
-        timezone={timezone}
-        statusFilter={statusFilter}
-        onViewChange={handleViewChange}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        onToday={handleToday}
-        onDateChange={handleDateChange}
-        onStatusFilterChange={setStatusFilter}
-        onNewAppointment={() => setCreateApptOpen(true)}
-      />
+    <PageLayout
+      maxWidth="full"
+      contentClassName="space-y-5"
+      header={
+        <CalendarToolbar
+          view={requestedView}
+          anchorDate={activeAnchor}
+          rangeHeading={rangeHeading}
+          timezone={timezone}
+          statusFilter={statusFilter}
+          onViewChange={handleViewChange}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          onToday={handleToday}
+          onDateChange={handleDateChange}
+          onStatusFilterChange={setStatusFilter}
+          onNewAppointment={() => setCreateApptOpen(true)}
+        />
+      }
+    >
 
       {narrowFallbackActive && (
         <div
@@ -251,6 +257,6 @@ export function CalendarPage() {
           }}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }

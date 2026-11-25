@@ -182,16 +182,50 @@ export async function cancelAppointment(
   return invokeCommand<AppointmentDetail>("cancel_appointment", { id });
 }
 
+export async function deleteAppointment(id: string): Promise<void> {
+  return invokeCommand<void>("delete_appointment", { id });
+}
+
 export async function listSessionPlans(
   params?: ListSessionPlansParams
 ): Promise<SessionPlanSummary[]> {
   return invokeCommand<SessionPlanSummary[]>("list_session_plans", { params });
 }
 
+export interface PlanSessionSlotInput {
+  start_local: string;
+  end_local: string;
+  dst_disambiguation?: DstDisambiguation | null;
+  notes?: string | null;
+}
+
+export interface CreateSessionPlanWithAppointmentsInput {
+  client_id: string;
+  title: string;
+  description?: string | null;
+  planned_sessions: number;
+  service_ids: string[];
+  sessions: PlanSessionSlotInput[];
+}
+
+export interface CreateSessionPlanWithAppointmentsResult {
+  plan: SessionPlanSummary;
+  appointments: AppointmentDetail[];
+}
+
 export async function createSessionPlan(
   input: CreateSessionPlanInput
 ): Promise<SessionPlanSummary> {
   return invokeCommand<SessionPlanSummary>("create_session_plan", { input });
+}
+
+export async function createSessionPlanWithAppointments(
+  input: CreateSessionPlanWithAppointmentsInput
+): Promise<CreateSessionPlanWithAppointmentsResult> {
+  return invokeCommand<CreateSessionPlanWithAppointmentsResult>(
+    "create_session_plan_with_appointments",
+    { input }
+  );
 }
 
 export async function updateSessionPlan(
@@ -204,4 +238,14 @@ export async function archiveSessionPlan(
   id: string
 ): Promise<SessionPlanSummary> {
   return invokeCommand<SessionPlanSummary>("archive_session_plan", { id });
+}
+
+export async function deleteSessionPlan(
+  id: string,
+  deleteLinkedAppointments = false
+): Promise<void> {
+  return invokeCommand<void>("delete_session_plan", {
+    id,
+    deleteLinkedAppointments,
+  });
 }

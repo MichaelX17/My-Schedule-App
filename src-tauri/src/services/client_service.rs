@@ -164,3 +164,26 @@ pub async fn restore_client(pool: &SqlitePool, id: &str) -> AppResult<Client> {
     tracing::info!(client_id = %restored.id, "Client restored");
     Ok(restored)
 }
+
+/// Permanently deletes an archived client that has no dependent appointments or session plans.
+pub async fn delete_client(pool: &SqlitePool, id: &str) -> AppResult<()> {
+    let existing = get_client(pool, id).await?;
+    if !existing.is_archived {
+        return Err(AppError::Validation(
+            "Only archived clients can be permanently deleted. Archive the client first.".into(),
+        ));
+    }
+
+    let (appointments_count, session_plans_count) =
+        client_repo::count_dependent_records(pool, &existing.id).await?;
+    if appointments_count > 0 || session_plans_count > 0 {
+        return Err(AppError::Validation(
+            "This archived client cannot be deleted because they have existing appointments or session plans. Keep them archived to preserve schedule history."
+                .into(),
+        ));
+    }
+
+    client_repo::delete(pool, &existing.id).await?;
+    tracing::info!(client_id = %existing.id, "Archived client permanently deleted");
+    Ok(())
+}

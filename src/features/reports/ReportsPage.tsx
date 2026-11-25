@@ -8,6 +8,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import {
   addDays,
@@ -58,83 +59,87 @@ export function ReportsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-6 sm:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Operational Reports
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Weekly and monthly non-financial summaries calculated in business
-            timezone ({data?.timezone ?? "..."}).
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div
-            role="group"
-            aria-label="Report cadence"
-            className="inline-flex rounded-md border border-border bg-background p-0.5"
-          >
-            <button
-              type="button"
-              aria-pressed={periodType === "weekly"}
-              onClick={() => setPeriodType("weekly")}
-              className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                periodType === "weekly"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Weekly
-            </button>
-            <button
-              type="button"
-              aria-pressed={periodType === "monthly"}
-              onClick={() => setPeriodType("monthly")}
-              className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                periodType === "monthly"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Monthly
-            </button>
+    <PageLayout
+      maxWidth="6xl"
+      header={
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Operational Reports
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Weekly and monthly non-financial summaries calculated in business
+              timezone ({data?.timezone ?? "..."}).
+            </p>
           </div>
 
-          <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              aria-label="Previous report period"
-              onClick={() => handleStep(-1)}
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              role="group"
+              aria-label="Report cadence"
+              className="inline-flex rounded-md border border-border bg-background p-0.5"
             >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2.5 text-xs"
-              onClick={handleCurrentPeriod}
-            >
-              Current
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              aria-label="Next report period"
-              onClick={() => handleStep(1)}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
+              <button
+                type="button"
+                aria-pressed={periodType === "weekly"}
+                onClick={() => setPeriodType("weekly")}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                  periodType === "weekly"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Weekly
+              </button>
+              <button
+                type="button"
+                aria-pressed={periodType === "monthly"}
+                onClick={() => setPeriodType("monthly")}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                  periodType === "monthly"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
+
+            <div className="inline-flex items-center rounded-md border border-border bg-background p-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label="Previous report period"
+                onClick={() => handleStep(-1)}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2.5 text-xs"
+                onClick={handleCurrentPeriod}
+              >
+                Current
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label="Next report period"
+                onClick={() => handleStep(1)}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      }
+    >
 
       {isError ? (
         <div
@@ -308,6 +313,6 @@ export function ReportsPage() {
           </section>
         </div>
       ) : null}
-    </div>
+    </PageLayout>
   );
 }

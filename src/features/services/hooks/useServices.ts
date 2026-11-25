@@ -4,6 +4,7 @@ import {
   archiveService,
   createService,
   deactivateService,
+  deleteService,
   listServices,
   restoreService,
   updateService,
@@ -81,6 +82,16 @@ export function useRestoreService() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => restoreService(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: SERVICE_QUERY_KEYS.all });
+    },
+  });
+}
+
+export function useDeleteService() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteService(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: SERVICE_QUERY_KEYS.all });
     },

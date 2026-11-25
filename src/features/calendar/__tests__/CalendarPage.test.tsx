@@ -135,9 +135,10 @@ describe("CalendarPage", () => {
     const user = userEvent.setup();
     renderCalendar();
 
-    // Initial week view loads appointment with accessible client/service/status text
+    // Initial week view loads appointment with accessible client/service/status/duration text
     expect(await screen.findByText("Elena Vance")).toBeInTheDocument();
     expect(screen.getByText("Initial Consultation")).toBeInTheDocument();
+    expect(screen.getByText("1h")).toBeInTheDocument();
     expect(screen.getByText("Jun 15 – 21, 2026")).toBeInTheDocument();
 
     // Switch to Day view

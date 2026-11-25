@@ -5,6 +5,9 @@ import {
   completeAppointment,
   createAppointment,
   createSessionPlan,
+  createSessionPlanWithAppointments,
+  deleteAppointment,
+  deleteSessionPlan,
   getAppointment,
   listAppointments,
   listSessionPlans,
@@ -13,6 +16,7 @@ import {
   updateSessionPlan,
   type CreateAppointmentInput,
   type CreateSessionPlanInput,
+  type CreateSessionPlanWithAppointmentsInput,
   type ListAppointmentsParams,
   type ListSessionPlansParams,
   type RescheduleAppointmentInput,
@@ -145,6 +149,23 @@ export function useCancelAppointment() {
   });
 }
 
+export function useDeleteAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteAppointment(id),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: APPOINTMENT_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: REMINDER_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: REPORT_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: SESSION_PLAN_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: ["clients"] }),
+      ]);
+    },
+  });
+}
+
 export function useCreateSessionPlan() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -152,6 +173,23 @@ export function useCreateSessionPlan() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: SESSION_PLAN_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: REPORT_QUERY_KEYS.all }),
+      ]);
+    },
+  });
+}
+
+export function useCreateSessionPlanWithAppointments() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateSessionPlanWithAppointmentsInput) =>
+      createSessionPlanWithAppointments(input),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: SESSION_PLAN_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: APPOINTMENT_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: REMINDER_QUERY_KEYS.all }),
         queryClient.invalidateQueries({ queryKey: REPORT_QUERY_KEYS.all }),
       ]);
     },
@@ -179,6 +217,29 @@ export function useArchiveSessionPlan() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: SESSION_PLAN_QUERY_KEYS.all }),
         queryClient.invalidateQueries({ queryKey: REPORT_QUERY_KEYS.all }),
+      ]);
+    },
+  });
+}
+
+export function useDeleteSessionPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      deleteLinkedAppointments,
+    }: {
+      id: string;
+      deleteLinkedAppointments: boolean;
+    }) => deleteSessionPlan(id, deleteLinkedAppointments),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: SESSION_PLAN_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: APPOINTMENT_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: REMINDER_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: REPORT_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: ["clients"] }),
       ]);
     },
   });

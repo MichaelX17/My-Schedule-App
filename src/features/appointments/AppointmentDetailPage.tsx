@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarClock,
@@ -7,12 +7,13 @@ import {
   Clock,
   FolderKanban,
   Pencil,
+  Trash2,
   User,
   XCircle,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
+import { DateTimeLocalPicker } from "@/components/shared/DateTimeLocalPicker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useClientsList } from "@/features/clients/hooks/useClients";
 import { useServicesList } from "@/features/services/hooks/useServices";
 import { formatDuration } from "@/features/services/validation";
@@ -22,6 +23,7 @@ import {
   useAppointmentDetail,
   useCancelAppointment,
   useCompleteAppointment,
+  useDeleteAppointment,
   useRescheduleAppointment,
   useSessionPlansList,
   useUpdateAppointment,
@@ -29,6 +31,7 @@ import {
 
 export function AppointmentDetailPage() {
   const { appointmentId } = useParams<{ appointmentId: string }>();
+  const navigate = useNavigate();
   const {
     data: appointment,
     isLoading,
@@ -43,37 +46,43 @@ export function AppointmentDetailPage() {
   const rescheduleAppointment = useRescheduleAppointment();
   const completeAppointment = useCompleteAppointment();
   const cancelAppointment = useCancelAppointment();
+  const deleteAppointment = useDeleteAppointment();
 
   const [editOpen, setEditOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduleStart, setRescheduleStart] = useState("");
   const [rescheduleEnd, setRescheduleEnd] = useState("");
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
-        <p className="text-sm text-muted-foreground">Loading appointment...</p>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
+          <p className="text-sm text-muted-foreground">Loading appointment...</p>
+        </div>
       </div>
     );
   }
 
   if (isError || !appointment) {
     return (
-      <div className="mx-auto w-full max-w-4xl p-6 sm:p-8 space-y-4">
-        <Link
-          to="/appointments"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back to Appointments
-        </Link>
-        <div
-          role="alert"
-          className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          {extractErrorMessage(error)}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-4xl p-6 sm:p-8 space-y-4">
+          <Link
+            to="/appointments"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back to Appointments
+          </Link>
+          <div
+            role="alert"
+            className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+          >
+            {extractErrorMessage(error)}
+          </div>
         </div>
       </div>
     );
@@ -122,6 +131,18 @@ export function AppointmentDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    setActionError(null);
+    try {
+      await deleteAppointment.mutateAsync(appointment.id);
+      setConfirmDeleteOpen(false);
+      navigate("/appointments", { replace: true });
+    } catch (err) {
+      setConfirmDeleteOpen(false);
+      setActionError(extractErrorMessage(err));
+    }
+  };
+
   // Preserve any currently attached inactive services in the edit selector
   const existingServiceIds = new Set(
     appointment.services.map((s) => s.service_id)
@@ -131,71 +152,90 @@ export function AppointmentDetailPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8 space-y-6">
-      <Link
-        to="/appointments"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Back to Appointments
-      </Link>
+    <PageLayout
+      maxWidth="4xl"
+      header={
+        <div className="space-y-3">
+          <Link
+            to="/appointments"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back to Appointments
+          </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {appointment.client_name}
-            </h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium capitalize text-secondary-foreground">
-              {appointment.status === "completed" ? (
-                <CheckCircle2 className="size-3.5 text-primary" />
-              ) : appointment.status === "cancelled" ? (
-                <XCircle className="size-3.5 text-muted-foreground" />
-              ) : (
-                <Clock className="size-3.5" />
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  {appointment.client_name}
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium capitalize text-secondary-foreground">
+                  {appointment.status === "completed" ? (
+                    <CheckCircle2 className="size-3.5 text-primary" />
+                  ) : appointment.status === "cancelled" ? (
+                    <XCircle className="size-3.5 text-muted-foreground" />
+                  ) : (
+                    <Clock className="size-3.5" />
+                  )}
+                  {appointment.status}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {appointment.start_local.replace("T", " ")} –{" "}
+                {appointment.end_local.slice(11)} ({appointment.timezone})
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {isScheduled && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Pencil className="size-3.5" />
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={openReschedule}>
+                    <CalendarClock className="size-3.5" />
+                    Reschedule
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={completeAppointment.isPending}
+                    onClick={handleComplete}
+                  >
+                    <CheckCircle2 className="size-3.5" />
+                    Mark Completed
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmCancelOpen(true)}
+                  >
+                    <XCircle className="size-3.5" />
+                    Cancel
+                  </Button>
+                </>
               )}
-              {appointment.status}
-            </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setActionError(null);
+                  setConfirmDeleteOpen(true);
+                }}
+              >
+                <Trash2 className="size-3.5" />
+                Delete
+              </Button>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {appointment.start_local.replace("T", " ")} –{" "}
-            {appointment.end_local.slice(11)} ({appointment.timezone})
-          </p>
         </div>
-
-        {isScheduled && (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditOpen(true)}
-            >
-              <Pencil className="size-3.5" />
-              Edit
-            </Button>
-            <Button variant="outline" size="sm" onClick={openReschedule}>
-              <CalendarClock className="size-3.5" />
-              Reschedule
-            </Button>
-            <Button
-              size="sm"
-              disabled={completeAppointment.isPending}
-              onClick={handleComplete}
-            >
-              <CheckCircle2 className="size-3.5" />
-              Mark Completed
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setConfirmCancelOpen(true)}
-            >
-              <XCircle className="size-3.5" />
-              Cancel
-            </Button>
-          </div>
-        )}
-      </div>
+      }
+    >
 
       {actionError && (
         <div
@@ -304,28 +344,20 @@ export function AppointmentDetailPage() {
               Reschedule Appointment
             </h2>
             <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="reschedule-start">
-                  New Start ({appointment.timezone})
-                </Label>
-                <Input
-                  id="reschedule-start"
-                  type="datetime-local"
-                  value={rescheduleStart}
-                  onChange={(e) => setRescheduleStart(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="reschedule-end">
-                  New End ({appointment.timezone})
-                </Label>
-                <Input
-                  id="reschedule-end"
-                  type="datetime-local"
-                  value={rescheduleEnd}
-                  onChange={(e) => setRescheduleEnd(e.target.value)}
-                />
-              </div>
+              <DateTimeLocalPicker
+                id="reschedule-start"
+                label={`New Start (${appointment.timezone})`}
+                value={rescheduleStart}
+                onChange={setRescheduleStart}
+                required
+              />
+              <DateTimeLocalPicker
+                id="reschedule-end"
+                label={`New End (${appointment.timezone})`}
+                value={rescheduleEnd}
+                onChange={setRescheduleEnd}
+                required
+              />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button
@@ -380,6 +412,53 @@ export function AppointmentDetailPage() {
           </div>
         </div>
       )}
-    </div>
+
+      {confirmDeleteOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-appt-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+        >
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-card-foreground shadow-lg space-y-4">
+            <h2 id="delete-appt-title" className="text-lg font-semibold">
+              Permanently delete this appointment?
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {appointment.session_plan_title ? (
+                <>
+                  This appointment belongs to session plan{" "}
+                  <span className="font-medium text-foreground">
+                    &ldquo;{appointment.session_plan_title}&rdquo;
+                  </span>
+                  . Deleting it will permanently remove this appointment and
+                  update the session plan to remove this session.
+                </>
+              ) : (
+                "This permanently deletes the appointment and its pending reminders. This action cannot be undone."
+              )}
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDeleteOpen(false)}
+                disabled={deleteAppointment.isPending}
+              >
+                Keep Appointment
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteAppointment.isPending}
+              >
+                {deleteAppointment.isPending
+                  ? "Deleting..."
+                  : "Delete Appointment"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </PageLayout>
   );
 }

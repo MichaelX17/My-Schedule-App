@@ -4,6 +4,7 @@ import type { AppointmentDetail } from "@/services/appointments";
 import {
   extractLocalDate,
   extractLocalMinutes,
+  formatDayHeader,
   getAppointmentsForDay,
 } from "../utils/calendarDate";
 import { AppointmentEventCard } from "./AppointmentEventCard";
@@ -50,24 +51,39 @@ export function DayView({ dayYmd, todayYmd, appointments }: DayViewProps) {
   }, [startHour, endHour]);
 
   const isToday = dayYmd === todayYmd;
+  const header = formatDayHeader(dayYmd);
+  const scheduledCount = dayAppointments.filter(
+    (a) => a.status === "scheduled"
+  ).length;
+  const completedCount = dayAppointments.filter(
+    (a) => a.status === "completed"
+  ).length;
 
   return (
     <section
       aria-label="Day schedule"
       className="rounded-xl border border-border bg-card overflow-hidden"
     >
-      <div className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-muted/30 px-4 py-3 shadow-[0_1px_0_rgb(128_128_128/0.12)]">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{dayYmd}</span>
+          <span className="text-sm font-semibold">
+            {header.weekdayShort}, {header.monthShort} {header.dayNum}
+          </span>
           {isToday && (
             <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
               Today
             </span>
           )}
         </div>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {dayAppointments.length}{" "}
           {dayAppointments.length === 1 ? "appointment" : "appointments"}
+          {dayAppointments.length > 0 && (
+            <>
+              {" · "}
+              {scheduledCount} scheduled · {completedCount} completed
+            </>
+          )}
         </span>
       </div>
 

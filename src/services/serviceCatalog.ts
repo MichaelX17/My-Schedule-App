@@ -80,3 +80,7 @@ export async function archiveService(id: string): Promise<Service> {
 export async function restoreService(id: string): Promise<Service> {
   return invokeCommand<Service>("restore_service", { id });
 }
+
+export async function deleteService(id: string): Promise<void> {
+  return invokeCommand<void>("delete_service", { id });
+}

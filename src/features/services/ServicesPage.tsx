@@ -10,7 +10,9 @@ import {
   PlayCircle,
   Plus,
   Search,
+  Trash2,
 } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { extractErrorMessage } from "@/services/business";
@@ -25,6 +27,7 @@ import {
   useArchiveService,
   useCreateService,
   useDeactivateService,
+  useDeleteService,
   useRestoreService,
   useServicesList,
   useUpdateService,
@@ -46,6 +49,7 @@ export function ServicesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [confirmArchive, setConfirmArchive] = useState<Service | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Service | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,6 +71,7 @@ export function ServicesPage() {
   const deactivateService = useDeactivateService();
   const archiveService = useArchiveService();
   const restoreService = useRestoreService();
+  const deleteService = useDeleteService();
 
   const items = data?.items ?? [];
   const activeCount = data?.active_count ?? 0;
@@ -113,6 +118,18 @@ export function ServicesPage() {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+    setActionError(null);
+    try {
+      await deleteService.mutateAsync(confirmDelete.id);
+      setConfirmDelete(null);
+    } catch (err) {
+      setConfirmDelete(null);
+      setActionError(extractErrorMessage(err));
+    }
+  };
+
   const handleRestore = async (service: Service) => {
     setActionError(null);
     try {
@@ -123,20 +140,24 @@ export function ServicesPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-6 sm:p-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Define the services you offer and their default durations. Inactive
-            or archived services remain preserved in historical appointments.
-          </p>
+    <PageLayout
+      maxWidth="5xl"
+      header={
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Define the services you offer and their default durations. Inactive
+              or archived services remain preserved in historical appointments.
+            </p>
+          </div>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4" />
+            New Service
+          </Button>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          New Service
-        </Button>
-      </div>
+      }
+    >
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div
@@ -314,15 +335,29 @@ export function ServicesPage() {
                   </Button>
 
                   {service.is_archived ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={restoreService.isPending}
-                      onClick={() => handleRestore(service)}
-                    >
-                      <ArchiveRestore className="size-3.5" />
-                      Restore
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={restoreService.isPending}
+                        onClick={() => handleRestore(service)}
+                      >
+                        <ArchiveRestore className="size-3.5" />
+                        Restore
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={deleteService.isPending}
+                        onClick={() => {
+                          setActionError(null);
+                          setConfirmDelete(service);
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Delete
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button
@@ -414,6 +449,41 @@ export function ServicesPage() {
           </div>
         </div>
       )}
-    </div>
+      {confirmDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-service-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+        >
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-card-foreground shadow-lg space-y-4">
+            <h2 id="delete-service-title" className="text-lg font-semibold">
+              Permanently delete &ldquo;{confirmDelete.name}&rdquo;?
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              This action cannot be undone. Archived services referenced by
+              existing appointments cannot be deleted in order to preserve
+              historical records.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleteService.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={deleteService.isPending}
+              >
+                {deleteService.isPending ? "Deleting..." : "Delete Permanently"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </PageLayout>
   );
 }

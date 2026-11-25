@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, UserPlus, X } from "lucide-react";
+import { DateTimeLocalPicker } from "@/components/shared/DateTimeLocalPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -439,32 +440,22 @@ export function AppointmentFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="appt-start">
-                Start ({businessTimezone}){" "}
-                <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="appt-start"
-                type="datetime-local"
-                value={startLocal}
-                onChange={(e) => handleStartChange(e.target.value)}
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-4">
+            <DateTimeLocalPicker
+              id="appt-start"
+              label={`Start (${businessTimezone})`}
+              value={startLocal}
+              onChange={handleStartChange}
+              required
+            />
 
-            <div className="space-y-1.5">
-              <Label htmlFor="appt-end">
-                End ({businessTimezone}){" "}
-                <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="appt-end"
-                type="datetime-local"
-                value={endLocal}
-                onChange={(e) => setEndLocal(e.target.value)}
-              />
-            </div>
+            <DateTimeLocalPicker
+              id="appt-end"
+              label={`End (${businessTimezone})`}
+              value={endLocal}
+              onChange={setEndLocal}
+              required
+            />
           </div>
 
           {showDstDisambiguation && (

@@ -170,3 +170,25 @@ pub async fn restore_service(pool: &SqlitePool, id: &str) -> AppResult<Service> 
     tracing::info!(service_id = %saved.id, "Service restored");
     Ok(saved)
 }
+
+/// Permanently deletes an archived service that is not referenced by any appointments.
+pub async fn delete_service(pool: &SqlitePool, id: &str) -> AppResult<()> {
+    let existing = get_service(pool, id).await?;
+    if !existing.is_archived {
+        return Err(AppError::Validation(
+            "Only archived services can be permanently deleted. Archive the service first.".into(),
+        ));
+    }
+
+    let dependent_count = service_repo::count_dependent_appointments(pool, &existing.id).await?;
+    if dependent_count > 0 {
+        return Err(AppError::Validation(
+            "This archived service cannot be deleted because it is referenced by existing appointments. Keep it archived to preserve historical records."
+                .into(),
+        ));
+    }
+
+    service_repo::delete(pool, &existing.id).await?;
+    tracing::info!(service_id = %existing.id, "Archived service permanently deleted");
+    Ok(())
+}

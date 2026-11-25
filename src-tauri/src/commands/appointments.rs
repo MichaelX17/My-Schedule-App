@@ -79,3 +79,9 @@ pub async fn cancel_appointment(
     let pool = state.db.require_pool()?;
     appointment_service::cancel_appointment(&pool, &id).await
 }
+
+#[tauri::command]
+pub async fn delete_appointment(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    let pool = state.db.require_pool()?;
+    appointment_service::delete_appointment(&pool, &id).await
+}
