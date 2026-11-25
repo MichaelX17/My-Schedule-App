@@ -23,6 +23,7 @@ coverage/
 # AI / local planning & agent tooling (not application source)
 .agents/
 skills-lock.json
+PROMPT/
 AGENTS.md
 MEMORY.md
 
